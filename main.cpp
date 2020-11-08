@@ -8,6 +8,7 @@ using std::cout;
 int main() {
 	AVLtree<int> K;
 	while (1) {
+		K.print();
 		char ch;
 		int n;
 		cin >> ch;
