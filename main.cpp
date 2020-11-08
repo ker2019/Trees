@@ -1,12 +1,13 @@
 #include <iostream>
 
 #include "AVLtree.hpp"
+#include "RBtree.hpp"
 
 using std::cin;
 using std::cout;
 
 int main() {
-	AVLtree<int> K;
+	RBtree<int> K;
 	while (1) {
 		K.print();
 		char ch;

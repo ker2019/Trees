@@ -1,6 +1,6 @@
 all: build
 
-main.o: main.cpp AVLtree.hpp
+main.o: main.cpp AVLtree.hpp RBtree.hpp
 	g++ -c -o main.o main.cpp
 
 build: main.o

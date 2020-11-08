@@ -2,6 +2,9 @@
 #include <iostream>
 #include <queue>
 
+#ifndef AVLTREE_HPP
+#define AVLTREE_HPP
+
 template< class Key_t, class Compare_t = std::less<Key_t> >
 class AVLtree {
 private:
@@ -125,8 +128,10 @@ public:
 	}
 
 	void insert(const Key_t &key) {
-		if (root == nullptr)
+		if (root == nullptr) {
 			root = new Node(key, nullptr);
+			return;
+		}
 		Node *node = root;
 		while (1) {
 			if (comp(key, node->key)) {
@@ -218,3 +223,5 @@ public:
 		}
 	}
 };
+
+#endif /* AVLTREE_HPP */
