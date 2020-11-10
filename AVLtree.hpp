@@ -47,6 +47,16 @@ private:
 					height = left->height > right->height ? left->height + 1 : right->height + 1;
 			}
 		}
+
+		Node **getBindingPoint() {
+			if (parent == nullptr)
+				return nullptr; // Binding point is root
+			if (this == parent->left)
+				return &parent->left;
+			if (this == parent->right)
+				return &parent->right;
+			throw 1;
+		}
 	};
 
 	Node *root;
@@ -113,6 +123,35 @@ private:
 		}
 	}
 
+	void fix(Node *node) {
+		for (Node *p = node; p != nullptr; p = p->parent)
+			p->updateHeight();
+		for (Node *p = node; p->parent != nullptr; p = p->parent) {
+			Node **point = p->getBindingPoint();
+			if (point == nullptr)
+				point = &root;
+			balance(point);
+		}
+	}
+
+	static void swap(Node *n1, Node *n2) {
+		Key_t tmp = n1->key;
+		n1->key = n2->key;
+		n2->key = tmp;
+	}
+
+	void removeLeaf(Node *n) {
+			Node *parent = n->parent;
+			Node **point = n->getBindingPoint();
+			delete n;
+			if (point != nullptr)
+				*point = nullptr;
+			else
+				root = nullptr;
+			if (parent != nullptr)
+				fix(parent);
+	}
+
 public:
 	AVLtree() {
 		root = nullptr;
@@ -137,16 +176,7 @@ public:
 			if (comp(key, node->key)) {
 				if (node->left == nullptr) {
 					node->left = new Node(key, node);
-					for (Node *p = node; p != nullptr; p = p->parent)
-						p->updateHeight();
-					for (Node *p = node; p->parent != nullptr; p = p->parent) {
-						if (p == p->parent->left)
-							balance(&p->parent->left);
-						else if (p == p->parent->right)
-							balance(&p->parent->right);
-						else
-							throw 1;
-					}
+					fix(node);
 					return;
 				}
 				node = node->left;
@@ -154,17 +184,7 @@ public:
 			else if (comp(node->key, key)) {
 				if (node->right == nullptr) {
 					node->right = new Node(key, node);
-					for (Node *p = node; p != nullptr; p = p->parent)
-						p->updateHeight();
-					for (Node *p = node; p->parent != nullptr; p = p->parent) {
-						if (p == p->parent->left)
-							balance(&p->parent->left);
-						else if (p == p->parent->right)
-							balance(&p->parent->right);
-						else
-							throw 1;
-					}
-					balance(&root);
+					fix(node);
 					return;
 				}
 				node = node->right;
@@ -191,6 +211,47 @@ public:
 			}
 			else
 				return true;
+		}
+	}
+
+	void erase(const Key_t &key) {
+		if (root == nullptr)
+			return;
+		Node *node = root;
+		while (1) {
+			if (comp(key, node->key)) {
+				if (node->left == nullptr)
+					return;
+				node = node->left;
+			}
+			else if (comp(node->key, key)) {
+				if (node->right == nullptr)
+					return;
+				node = node->right;
+			}
+			else {
+				Node *n = node;
+				while (1) {
+					if (n->right != nullptr) {
+						n = n->right;
+						while (n->left != nullptr)
+							n = n->left;
+						swap(node, n);
+						node = n;
+					}
+					else if (n->left != nullptr) {
+						n = n->left;
+						while (n->right != nullptr)
+							n = n->right;
+						swap(node, n);
+						node = n;
+					}
+					else
+						break;
+				}
+				removeLeaf(n);
+				return;
+			}
 		}
 	}
 

@@ -7,7 +7,7 @@ using std::cin;
 using std::cout;
 
 int main() {
-	RBtree<int> K;
+	AVLtree<int> K;
 	while (1) {
 		K.print();
 		char ch;
@@ -21,6 +21,10 @@ int main() {
 		case 'e':
 			cin >> n;
 			cout << (K.contains(n) ? "YES\n" : "NO\n");
+			break;
+		case 'd':
+			cin >> n;
+			K.erase(n);
 			break;
 		case 'q':
 			return 0;
