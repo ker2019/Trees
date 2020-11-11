@@ -260,13 +260,16 @@ public:
 			return;
 		std::queue<Node*> q;
 
-		const int width = 2*((1 << root->height) - 1);
+		int width = (1 << root->height) - 1;
 		q.push(root);
 		int pos_num = 1;
-		for (int j = 0; j < root->height; j++, pos_num = 2 * pos_num) {
+		for (int j = 0; j < root->height; j++, pos_num = 2 * pos_num, width = width/2) {
+			for (int k = 0; k < width/2; k++)
+				std::cout << ' ';
 			for (int i = 0; i < pos_num; i++) {
-				for (int k = 0; k < (width - pos_num)/(pos_num + 1); k++)
-					std::cout << ' ';
+				if (i > 0)
+					for (int k = 0; k < width; k++)
+						std::cout << ' ';
 				Node *node = q.front();
 				q.pop();
 				if (node == nullptr) {
@@ -280,6 +283,8 @@ public:
 					q.push(node->right);
 				}
 			}
+			for (int k = 0; k < width/2; k++)
+				std::cout << ' ';
 			std::cout << '\n';
 		}
 	}
