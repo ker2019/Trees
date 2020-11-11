@@ -8,34 +8,42 @@
 template< class Key_t, class Compare_t = std::less<Key_t> >
 class RBtree {
 private:
-	struct Node {
-		Key_t key;
+	class Node {
+	private:
 		Node *left = nullptr;
 		Node *right = nullptr;
 		Node *parent = nullptr;
-		Node **binding_point = nullptr;
 		int height = 1;
-		enum color_t {red, black};
-		color_t color = red;
+		Node **root;
+
+		Node **getBindingPoint() const {
+			if (parent == nullptr)
+				return root;
+
+			if (this == parent->left)
+				return &parent->left;
+			else if (this == parent->right)
+				return &parent->right;
+			else
+				throw 1;
+		}
+
 		Node(const Key_t &key) {
 			this->key = key;
 		}
 
-		~Node() {
-			if (left != nullptr)
-				delete left;
-			if (right != nullptr)
-				delete right;
-		}
+	public:
+		Key_t key;
+		enum color_t {red, black};
+		color_t color = red;
 
-		static void bindto(Node *node, Node *new_parent, Node **new_point) {
-			*new_point = node;
-			if (node != nullptr) {
-				if (node->binding_point != nullptr)
-					*(node->binding_point) = nullptr;
-				node->parent = new_parent;
-				node->binding_point = new_point;
-			}
+		static void createRoot(const Key_t &key, Node **root) {
+			if (*root != nullptr)
+				throw 1;
+
+			Node *new_node = new Node(key);
+			new_node->root = root;
+			*root = new_node;
 		}
 
 		void updateHeight() {
@@ -52,56 +60,188 @@ private:
 					height = left->height > right->height ? left->height + 1 : right->height + 1;
 			}
 		}
+
+		void createLeft(const Key_t &key) {
+			if (left != nullptr)
+				throw 1;
+
+			Node *new_node = new Node(key);
+			new_node->root = root;
+			new_node->parent = this;
+			left = new_node;
+
+			for (Node *p = this; p != nullptr; p = p->parent)
+				p->updateHeight();
+		}
+
+		void createRight(const Key_t &key) {
+			if (right != nullptr)
+				throw 1;
+
+			Node *new_node = new Node(key);
+			new_node->root = root;
+			new_node->parent = this;
+			right = new_node;
+
+			for (Node *p = this; p != nullptr; p = p->parent)
+				p->updateHeight();
+		}
+
+		~Node() {
+			if (left != nullptr)
+				delete left;
+			if (right != nullptr)
+				delete right;
+		}
+
+		void remove() {
+			*getBindingPoint() = nullptr;
+			for (Node *p = parent; p != nullptr; p = p->parent)
+				p->updateHeight();
+			delete this;
+		}
+
+		Node *getLeft() const {
+			return left;
+		}
+
+		Node *getRight() const {
+			return right;
+		}
+
+		int getHeight() const {
+			return height;
+		}
+
+		Node *getParent() const {
+			return parent;
+		}
+
+		bool isLeft() const {
+			// Root
+			if (parent == nullptr)
+				return false;
+
+			if (this == parent->left)
+				return true;
+			return false;
+		}
+
+		bool isRight() const {
+			// Root
+			if (parent == nullptr)
+				return false;
+
+			if (this == parent->right)
+				return true;
+			return false;
+		}
+
+		bool isRoot() const {
+			if (parent == nullptr)
+				return true;
+			return false;
+		}
+
+		void bindToLeft(Node &node) {
+			// The place is taken!
+			if (node.left != nullptr)
+				throw 1;
+
+			*getBindingPoint() = nullptr;
+			parent = &node;
+			node.left = this;
+			for (Node *p = parent; p != nullptr; p = p->parent)
+				p->updateHeight();
+		}
+
+		void bindToRight(Node &node) {
+			// The place is taken!
+			if (node.right != nullptr)
+				throw 1;
+
+			*getBindingPoint() = nullptr;
+			parent = &node;
+			node.right = this;
+			for (Node *p = parent; p != nullptr; p = p->parent)
+				p->updateHeight();
+		}
+
+		void bindToRoot() {
+			// The place is taken!
+			if (*root != nullptr)
+				throw 1;
+
+			*getBindingPoint() = nullptr;
+			parent = nullptr;
+			*root = this;
+		}
+
+		void rotateRight() {
+			Node *left = this->left;
+			if (left == nullptr)
+				throw 1;
+
+			Node *parent = this->parent;
+			Node **p = this->getBindingPoint();
+
+			this->left = left->right;
+			if (left->right != nullptr)
+				left->right->parent = this;
+
+			left->right = this;
+			this->parent = left;
+
+			*p = left;
+			left->parent = parent;
+
+			this->updateHeight();
+			left->updateHeight();
+		}
+
+		void rotateLeft() {
+			Node *right = this->right;
+			if (right == nullptr)
+				throw 1;
+
+			Node *parent = this->parent;
+			Node **p = this->getBindingPoint();
+
+			this->right = right->left;
+			if (right->left != nullptr)
+				right->left->parent = this;
+
+			right->left = this;
+			this->parent = right;
+
+			*p = right;
+			right->parent = parent;
+
+			this->updateHeight();
+			right->updateHeight();
+		}
 	};
 
-	Node *root;
+	Node *root = nullptr;
 	Compare_t comp;
-
-	static void rotateRight(Node &node) {
-		Node *left = node.left;
-		if (left == nullptr)
-			throw 1;
-		Node *parent = node.parent;
-		Node **binding_point = node.binding_point;
-
-		Node::bindto(left->right, &node, &node.left);
-		Node::bindto(&node, left, &left->right);
-		Node::bindto(left, parent, binding_point);
-		node.updateHeight();
-		left->updateHeight();
-	}
-
-	static void rotateLeft(Node &node) {
-		Node *right = node.right;
-		if (right == nullptr)
-			throw 1;
-		Node *parent = node.parent;
-		Node **binding_point = node.binding_point;
-
-		Node::bindto(right->left, &node, &node.right);
-		Node::bindto(&node, right, &right->left);
-		Node::bindto(right, parent, binding_point);
-		node.updateHeight();
-		right->updateHeight();
-	}
 
 	void fix(Node &node) {
 		if (node.color == Node::black)
 			return;
 
 		// Root
-		if (node.parent == nullptr) {
+		Node *father = node.getParent();
+		if (father == nullptr) {
 			node.color = Node::black;
 			return;
 		}
 
-		Node *father = node.parent;
 		if (father->color == Node::black)
 			return;
 
-		Node *grandpa = father->parent;
-		if (grandpa->left == father) {
-			Node *uncle = grandpa->right;
+		Node *grandpa = father->getParent();
+		if (father->isLeft()) {
+			Node *uncle = grandpa->getRight();
 			auto uncle_color = (uncle == nullptr ? Node::black : uncle->color);
 			if (uncle_color == Node::red) {
 				father->color = Node::black;
@@ -111,22 +251,22 @@ private:
 				return;
 			}
 
-			if (father->right == &node) {
-				rotateLeft(*father);
-				rotateRight(*grandpa);
+			if (node.isRight()) {
+				father->rotateLeft();
+				grandpa->rotateRight();
 				node.color = Node::black;
 				grandpa->color = Node::red;
 				return;
 			}
 
-			if (father->left == &node) {
-				rotateRight(*grandpa);
+			if (node.isLeft()) {
+				grandpa->rotateRight();
 				father->color = Node::black;
 				grandpa->color = Node::red;
 			}
 		}
-		else if (grandpa->right == father) {
-			Node *uncle = grandpa->left;
+		else if (father->isRight()) {
+			Node *uncle = grandpa->getLeft();
 			auto uncle_color = (uncle == nullptr ? Node::black : uncle->color);
 			if (uncle_color == Node::red) {
 				father->color = Node::black;
@@ -136,16 +276,16 @@ private:
 				return;
 			}
 
-			if (father->left == &node) {
-				rotateRight(*father);
-				rotateLeft(*grandpa);
+			if (node.isLeft()) {
+				father->rotateRight();
+				grandpa->rotateLeft();
 				node.color = Node::black;
 				grandpa->color = Node::red;
 				return;
 			}
 
-			if (father->right == &node) {
-				rotateLeft(*grandpa);
+			if (node.isRight()) {
+				grandpa->rotateLeft();
 				father->color = Node::black;
 				grandpa->color = Node::red;
 			}
@@ -156,11 +296,9 @@ private:
 
 public:
 	RBtree() {
-		root = nullptr;
 		comp = Compare_t();
 	}
 	RBtree(const Compare_t &comp) {
-		root = nullptr;
 		this->comp = comp;
 	}
 	~RBtree() {
@@ -170,34 +308,27 @@ public:
 
 	void insert(const Key_t &key) {
 		if (root == nullptr) {
-			Node *new_node = new Node(key);
-			Node::bindto(new_node, nullptr, &root);
-			fix(*new_node);
+			Node::createRoot(key, &root);
+			fix(*root);
 			return;
 		}
 		Node *node = root;
 		while (1) {
 			if (comp(key, node->key)) {
-				if (node->left == nullptr) {
-					Node *new_node = new Node(key);
-					Node::bindto(new_node, node, &node->left);
-					for (Node *p = node; p != nullptr; p = p->parent)
-						p->updateHeight();
-					fix(*new_node);
+				if (node->getLeft() == nullptr) {
+					node->createLeft(key);
+					fix(*node->getLeft());
 					return;
 				}
-				node = node->left;
+				node = node->getLeft();
 			}
 			else if (comp(node->key, key)) {
-				if (node->right == nullptr) {
-					Node *new_node = new Node(key);
-					Node::bindto(new_node, node, &node->right);
-					for (Node *p = node; p != nullptr; p = p->parent)
-						p->updateHeight();
-					fix(*new_node);
+				if (node->getRight() == nullptr) {
+					node->createRight(key);
+					fix(*node->getRight());
 					return;
 				}
-				node = node->right;
+				node = node->getRight();
 			}
 			else
 				return; // This key already exists
@@ -210,14 +341,14 @@ public:
 		Node *node = root;
 		while (1) {
 			if (comp(key, node->key)) {
-				if (node->left == nullptr)
+				if (node->getLeft() == nullptr)
 					return false;
-				node = node->left;
+				node = node->getLeft();
 			}
 			else if (comp(node->key, key)) {
-				if (node->right == nullptr)
+				if (node->getRight() == nullptr)
 					return false;
-				node = node->right;
+				node = node->getRight();
 			}
 			else
 				return true;
@@ -229,10 +360,10 @@ public:
 			return;
 		std::queue<Node*> q;
 
-		int width = (1 << root->height) - 1;
+		int width = (1 << root->getHeight()) - 1;
 		q.push(root);
 		int pos_num = 1;
-		for (int j = 0; j < root->height; j++, pos_num = 2 * pos_num, width=width/2) {
+		for (int j = 0; j < root->getHeight(); j++, pos_num = 2 * pos_num, width=width/2) {
 			for (int k = 0; k < width/2; k++)
 				std::cout << ' ';
 			for (int i = 0; i < pos_num; i++) {
@@ -251,8 +382,8 @@ public:
 						std::cout << "\x1b[31m" <<  node->key << "\x1b[0m";
 					else
 						std::cout << node->key;
-					q.push(node->left);
-					q.push(node->right);
+					q.push(node->getLeft());
+					q.push(node->getRight());
 				}
 			}
 			for (int k = 0; k < width/2; k++)
