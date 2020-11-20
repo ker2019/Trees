@@ -1,9 +1,9 @@
+#ifndef AVLTREE_HPP
+#define AVLTREE_HPP
+
 #include <functional>
 #include <iostream>
 #include <queue>
-
-#ifndef AVLTREE_HPP
-#define AVLTREE_HPP
 
 template< class Key_t, class Compare_t = std::less<Key_t> >
 class AVLtree {

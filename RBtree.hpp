@@ -1,9 +1,9 @@
+#ifndef RBTREE_HPP
+#define RBTREE_HPP
+
 #include <functional>
 #include <iostream>
 #include <queue>
-
-#ifndef RBTREE_HPP
-#define RBTREE_HPP
 
 template< class Key_t, class Compare_t = std::less<Key_t> >
 class RBtree {
@@ -225,14 +225,14 @@ private:
 	Node *root = nullptr;
 	Compare_t comp;
 
-	void fix(Node &node) {
-		if (node.color == Node::black)
+	void fix(Node *node) {
+		if (node->color == Node::black)
 			return;
 
 		// Root
-		Node *father = node.getParent();
+		Node *father = node->getParent();
 		if (father == nullptr) {
-			node.color = Node::black;
+			node->color = Node::black;
 			return;
 		}
 
@@ -247,19 +247,19 @@ private:
 				father->color = Node::black;
 				uncle->color = Node::black;
 				grandpa->color = Node::red;
-				fix(*grandpa);
+				fix(grandpa);
 				return;
 			}
 
-			if (node.isRight()) {
+			if (node->isRight()) {
 				father->rotateLeft();
 				grandpa->rotateRight();
-				node.color = Node::black;
+				node->color = Node::black;
 				grandpa->color = Node::red;
 				return;
 			}
 
-			if (node.isLeft()) {
+			if (node->isLeft()) {
 				grandpa->rotateRight();
 				father->color = Node::black;
 				grandpa->color = Node::red;
@@ -272,19 +272,19 @@ private:
 				father->color = Node::black;
 				uncle->color = Node::black;
 				grandpa->color = Node::red;
-				fix(*grandpa);
+				fix(grandpa);
 				return;
 			}
 
-			if (node.isLeft()) {
+			if (node->isLeft()) {
 				father->rotateRight();
 				grandpa->rotateLeft();
-				node.color = Node::black;
+				node->color = Node::black;
 				grandpa->color = Node::red;
 				return;
 			}
 
-			if (node.isRight()) {
+			if (node->isRight()) {
 				grandpa->rotateLeft();
 				father->color = Node::black;
 				grandpa->color = Node::red;
@@ -309,7 +309,7 @@ public:
 	void insert(const Key_t &key) {
 		if (root == nullptr) {
 			Node::createRoot(key, &root);
-			fix(*root);
+			fix(root);
 			return;
 		}
 		Node *node = root;
@@ -317,7 +317,7 @@ public:
 			if (comp(key, node->key)) {
 				if (node->getLeft() == nullptr) {
 					node->createLeft(key);
-					fix(*node->getLeft());
+					fix(node->getLeft());
 					return;
 				}
 				node = node->getLeft();
@@ -325,7 +325,7 @@ public:
 			else if (comp(node->key, key)) {
 				if (node->getRight() == nullptr) {
 					node->createRight(key);
-					fix(*node->getRight());
+					fix(node->getRight());
 					return;
 				}
 				node = node->getRight();
