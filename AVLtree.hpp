@@ -14,6 +14,26 @@ private:
 	Node<Key_t> *root;
 	Compare_t comp;
 
+	Node<Key_t> *find(const Key_t &key) const {
+		if (root == nullptr)
+			return nullptr;
+		Node<Key_t> *node = root;
+		while (1) {
+			if (comp(key, node->data)) {
+				if (node->getLeft() == nullptr)
+					return nullptr;
+				node = node->getLeft();
+			}
+			else if (comp(node->data, key)) {
+				if (node->getRight() == nullptr)
+					return nullptr;
+				node = node->getRight();
+			}
+			else
+				return node;
+		}
+	}
+
 	static void balance(Node<Key_t> *node) {
 		int lh = (node->getLeft() != nullptr ? node->getLeft()->getHeight() : 0);
 		int rh = (node->getRight() != nullptr ? node->getRight()->getHeight() : 0);
@@ -92,64 +112,37 @@ public:
 	}
 
 	bool contains(const Key_t &key) const {
-		if (root == nullptr)
-			return false;
-		Node<Key_t> *node = root;
-		while (1) {
-			if (comp(key, node->data)) {
-				if (node->getLeft() == nullptr)
-					return false;
-				node = node->getLeft();
-			}
-			else if (comp(node->data, key)) {
-				if (node->getRight() == nullptr)
-					return false;
-				node = node->getRight();
-			}
-			else
-				return true;
-		}
+		return !(find(key) == nullptr);
 	}
 
 	void erase(const Key_t &key) {
-		if (root == nullptr)
+		Node<Key_t> *node = find(key);
+		if (node == nullptr)
 			return;
-		Node<Key_t> *node = root;
+
+		Node<Key_t> *n = node;
 		while (1) {
-			if (comp(key, node->data)) {
-				if (node->getLeft() == nullptr)
-					return;
-				node = node->getLeft();
-			}
-			else if (comp(node->data, key)) {
-				if (node->getRight() == nullptr)
-					return;
-				node = node->getRight();
-			}
-			else {
-				Node<Key_t> *n = node;
-				while (1) {
-					if (n->getRight() != nullptr) {
-						n = n->getRight();
-						while (n->getLeft() != nullptr)
-							n = n->getLeft();
-						std::swap(n->data, node->data);
-						node = n;
-					}
-					else if (n->getLeft() != nullptr) {
+				if (n->getRight() != nullptr) {
+					n = n->getRight();
+					while (n->getLeft() != nullptr)
 						n = n->getLeft();
-						while (n->getRight() != nullptr)
-							n = n->getRight();
-						std::swap(n->data, node->data);
-						node = n;
-					}
-					else
-						break;
+					std::swap(n->data, node->data);
+					node = n;
 				}
-				n->remove();
-				return;
-			}
+				else if (n->getLeft() != nullptr) {
+					n = n->getLeft();
+					while (n->getRight() != nullptr)
+						n = n->getRight();
+					std::swap(n->data, node->data);
+					node = n;
+				}
+				else
+					break;
 		}
+		Node<Key_t> *p = n->getParent();
+		n->remove();
+		if (p != nullptr)
+			fix(p);
 	}
 
 	void print() const {
