@@ -26,6 +26,13 @@ private:
 		this->data = data;
 	}
 
+	~Node() {
+		if (left != nullptr)
+			delete left;
+		if (right != nullptr)
+			delete right;
+	}
+
 public:
 	Data_t data;
 
@@ -79,13 +86,6 @@ public:
 			p->updateHeight();
 	}
 
-	~Node() {
-		if (left != nullptr)
-			delete left;
-		if (right != nullptr)
-			delete right;
-	}
-
 	void remove() {
 		*getBindingPoint() = nullptr;
 		for (Node *p = parent; p != nullptr; p = p->parent)
@@ -136,37 +136,37 @@ public:
 	}
 
 	void bindToLeft(Node &node) {
-		// The place is taken!
-		if (node.left != nullptr)
-			throw 1;
+		Node *tmp = node.left;
 
 		*getBindingPoint() = nullptr;
 		parent = &node;
 		node.left = this;
 		for (Node *p = parent; p != nullptr; p = p->parent)
 			p->updateHeight();
+		if (tmp != nullptr)
+			delete tmp;
 	}
 
 	void bindToRight(Node &node) {
-		// The place is taken!
-		if (node.right != nullptr)
-			throw 1;
+		Node *tmp = node.right;
 
 		*getBindingPoint() = nullptr;
 		parent = &node;
 		node.right = this;
 		for (Node *p = parent; p != nullptr; p = p->parent)
 			p->updateHeight();
+		if (tmp != nullptr)
+			delete tmp;
 	}
 
 	void bindToRoot() {
-		// The place is taken!
-		if (*root != nullptr)
-			throw 1;
+		Node *tmp = *root;
 
 		*getBindingPoint() = nullptr;
 		parent = nullptr;
 		*root = this;
+		if (tmp != nullptr)
+			delete tmp;
 	}
 
 	void rotateRight() {

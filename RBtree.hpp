@@ -17,7 +17,33 @@ private:
 	Node<pair<Key_t, color_t>> *root = nullptr;
 	Compare_t comp;
 
-	void fix(Node<pair<Key_t, color_t>> *node) {
+	Node<pair<Key_t, color_t>> *find(const Key_t &key) const {
+		if (root == nullptr)
+			return nullptr;
+		Node<pair<Key_t, color_t>> *node = root;
+		while (1) {
+			if (comp(key, node->data.first)) {
+				if (node->getLeft() == nullptr)
+					return nullptr;
+				node = node->getLeft();
+			}
+			else if (comp(node->data.first, key)) {
+				if (node->getRight() == nullptr)
+					return nullptr;
+				node = node->getRight();
+			}
+			else
+				return node;
+		}
+	}
+
+	static color_t getColor(const Node<pair<Key_t, color_t>> *node) {
+		if (node == nullptr)
+			return black;
+		return node->data.second;
+	}
+
+	static void fixInsertion(Node<pair<Key_t, color_t>> *node) {
 		if (node->data.second == black)
 			return;
 
@@ -39,7 +65,7 @@ private:
 				father->data.second = black;
 				uncle->data.second = black;
 				grandpa->data.second = red;
-				fix(grandpa);
+				fixInsertion(grandpa);
 				return;
 			}
 
@@ -64,7 +90,7 @@ private:
 				father->data.second = black;
 				uncle->data.second = black;
 				grandpa->data.second = red;
-				fix(grandpa);
+				fixInsertion(grandpa);
 				return;
 			}
 
@@ -86,22 +112,123 @@ private:
 			throw 1;
 	}
 
+	// Fixes the situation that in the left there is less by one black nodes
+	static void fixLeftDeficite(Node<pair<Key_t, color_t>> *node) {
+		auto child = node->getLeft();
+		if (getColor(child) == red) {
+			child->data.second = black;
+			return;
+		}
+
+		auto sibling = node->getRight();
+		if (getColor(sibling) == red) {
+			std::swap(node->data.second, sibling->data.second);
+			node->rotateLeft();
+			fixLeftDeficite(node);
+			return;
+		}
+
+		// The sibling cannot be leaf beacuse there is left deficite of black nodes
+		if (getColor(sibling->getLeft()) == black && getColor(sibling->getRight()) == black) {
+			if (getColor(node) == black) {
+				sibling->data.second = red;
+				if (node->isLeft())
+					fixLeftDeficite(node->getParent());
+				else if (node->isRight())
+					fixRightDeficite(node->getParent());
+			}
+			else
+				std::swap(node->data.second, sibling->data.second);
+		}
+		else {
+			if (getColor(sibling->getRight()) == black) {
+				sibling->rotateRight();
+				std::swap(sibling->data.second, sibling->getParent()->data.second);
+				sibling = sibling->getParent();
+			}
+			node->rotateLeft();
+			std::swap(node->data.second, sibling->data.second);
+			sibling->getRight()->data.second = black;
+		}
+	}
+
+	// Fixes the situation that in the right there is less by one black nodes
+	static void fixRightDeficite(Node<pair<Key_t, color_t>> *node) {
+		auto child = node->getRight();
+		if (getColor(child) == red) {
+			child->data.second = black;
+			return;
+		}
+
+		auto sibling = node->getLeft();
+		if (getColor(sibling) == red) {
+			std::swap(node->data.second, sibling->data.second);
+			node->rotateRight();
+			fixRightDeficite(node);
+			return;
+		}
+
+		// The sibling cannot be leaf beacuse there is left deficite of black nodes
+		if (getColor(sibling->getRight()) == black && getColor(sibling->getLeft()) == black) {
+			if (getColor(node) == black) {
+				sibling->data.second = red;
+				if (node->isRight())
+					fixRightDeficite(node->getParent());
+				else if (node->isLeft())
+					fixLeftDeficite(node->getParent());
+			}
+			else
+				std::swap(node->data.second, sibling->data.second);
+		}
+		else {
+			if (getColor(sibling->getLeft()) == black) {
+				sibling->rotateLeft();
+				std::swap(sibling->data.second, sibling->getParent()->data.second);
+				sibling = sibling->getParent();
+			}
+			node->rotateRight();
+			std::swap(node->data.second, sibling->data.second);
+			sibling->getLeft()->data.second = black;
+		}
+	}
+
+	static int check_rec(const Node<pair<Key_t, color_t>> *node) {
+		if (node == nullptr)
+			return 1;
+
+		Node<pair<Key_t, color_t>> *left = node->getLeft(), *right = node->getRight();
+		if (node->data.second == red)
+			if (getColor(left) == red || getColor(right) == red)
+				throw "Tree is incorrect!";
+
+		int left_black_num = check_rec(left);
+		int right_black_num = check_rec(right);
+		if (left_black_num != right_black_num)
+			throw "Tree is incorrect!";
+
+		if (node->data.second == black)
+			return left_black_num + 1;
+		else
+			return left_black_num;
+	}
+
 public:
 	RBtree() {
 		comp = Compare_t();
 	}
+
 	RBtree(const Compare_t &comp) {
 		this->comp = comp;
 	}
+
 	~RBtree() {
 		if (root != nullptr)
-			delete root;
+			root->remove();
 	}
 
 	void insert(const Key_t &key) {
 		if (root == nullptr) {
 			Node<pair<Key_t, color_t>>::createRoot({key, black}, &root);
-			fix(root);
 			return;
 		}
 		Node<pair<Key_t, color_t>> *node = root;
@@ -109,7 +236,7 @@ public:
 			if (comp(key, node->data.first)) {
 				if (node->getLeft() == nullptr) {
 					node->createLeft({key, red});
-					fix(node->getLeft());
+					fixInsertion(node->getLeft());
 					return;
 				}
 				node = node->getLeft();
@@ -117,7 +244,7 @@ public:
 			else if (comp(node->data.first, key)) {
 				if (node->getRight() == nullptr) {
 					node->createRight({key, red});
-					fix(node->getRight());
+					fixInsertion(node->getRight());
 					return;
 				}
 				node = node->getRight();
@@ -128,22 +255,63 @@ public:
 	}
 
 	bool contains(const Key_t &key) const {
-		if (root == nullptr)
-			return false;
-		Node<pair<Key_t, color_t>> *node = root;
-		while (1) {
-			if (comp(key, node->data.first)) {
-				if (node->getLeft() == nullptr)
-					return false;
-				node = node->getLeft();
+		return !(find(key) == nullptr);
+	}
+
+	void erase(const Key_t &key) {
+		Node<pair<Key_t, color_t>> *node = find(key);
+		if (node == nullptr)
+			return;
+
+		Node<pair<key_t, color_t>> *n = node;
+		if (n->getLeft() != nullptr && n->getRight() != nullptr) {
+			n = n->getRight();
+			while (n->getLeft() != nullptr)
+				n = n->getLeft();
+			std::swap(node->data.first, n->data.first);
+			node = n;
+		}
+
+		/*
+		It isn't posssible it to have
+		a black child, because the number of black nodes in
+		any path must be equal.
+		*/
+
+		if (node->data.second == red) {
+			node->remove();
+			return;
+		}
+
+		Node<pair<Key_t, color_t>> *father = node->getParent();
+
+		Node<pair<Key_t, color_t>> *child = (node->getLeft() == nullptr ? node->getRight() : node->getLeft());
+		// Replace the node by its child
+		if (child != nullptr) {
+			if (node->isLeft()) {
+				child->bindToLeft(*father);
+				fixLeftDeficite(father);
 			}
-			else if (comp(node->data.first, key)) {
-				if (node->getRight() == nullptr)
-					return false;
-				node = node->getRight();
+			else if (node->isRight()) {
+				child->bindToRight(*father);
+				fixRightDeficite(father);
+			}
+			else {
+				child->bindToRoot();
+				child->data.second = black;
+			}
+		}
+		else {
+			if (node->isLeft()) {
+				node->remove();
+				fixLeftDeficite(father);
+			}
+			else if (node->isRight()) {
+				node->remove();
+				fixRightDeficite(father);
 			}
 			else
-				return true;
+				node->remove();
 		}
 	}
 
@@ -182,6 +350,14 @@ public:
 				std::cout << ' ';
 			std::cout << '\n';
 		}
+	}
+
+	void check() const {
+		if (root == nullptr)
+			return;
+		if (root->data.second == red)
+			throw "Tree is incorrect!";
+		check_rec(root);
 	}
 };
 

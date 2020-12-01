@@ -7,9 +7,10 @@ using std::cin;
 using std::cout;
 
 int main() {
-	AVLtree<int> K;
+	RBtree<int> K;
 	while (1) {
 		K.print();
+		K.check();
 		char ch;
 		int n;
 		cin >> ch;
