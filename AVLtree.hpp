@@ -6,10 +6,11 @@
 #include <iostream>
 #include <queue>
 
+#include "TreeBase.hpp"
 #include "Node.hpp"
 
 template< class Key_t, class Compare_t = std::less<Key_t> >
-class AVLtree {
+class AVLtree : public TreeBase<Key_t, Compare_t> {
 private:
 	Node<Key_t> *root;
 	Compare_t comp;

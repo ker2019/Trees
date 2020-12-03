@@ -6,12 +6,13 @@
 #include <iostream>
 #include <queue>
 
+#include "TreeBase.hpp"
 #include "Node.hpp"
 
 using std::pair;
 
 template< class Key_t, class Compare_t = std::less<Key_t> >
-class RBtree {
+class RBtree : public TreeBase<Key_t, Compare_t> {
 private:
 	enum color_t {red, black};
 	Node<pair<Key_t, color_t>> *root = nullptr;
