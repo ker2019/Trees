@@ -1,13 +1,17 @@
 #include <iostream>
 #include <getopt.h>
+#include <filesystem>
 
 #include "TreeBase.hpp"
 #include "AVLtree.hpp"
 #include "RBtree.hpp"
+#include "Profiler.hpp"
 
 using std::cin;
 using std::cout;
 using std::cerr;
+using std::filesystem::create_directory;
+using std::filesystem::exists;
 
 void game(TreeBase<int> &K) {
 	while (1) {
@@ -43,14 +47,24 @@ int main(int argc, char *argv[]) {
 		}
 		else if (opt_index == 1) {
 			RBtree<int> K;
+			K.size();
 			game(K);
 		}
 		else
 			throw 1;
 	}
 	else {
-		cerr << "Invalid argument\n";
-		return 1;
+		if (!exists("out"))
+			if (!create_directory("out")) {
+				cerr << "Cannot make directory: out; Aborting\n";
+				return 2;
+			}
+		Profiler<AVLtree<int>> ap;
+		ap.measure(1000);
+		ap.saveStats("out/avl.tsv");
+		Profiler<RBtree<int>> rp;
+		rp.measure(1000);
+		rp.saveStats("out/rb.tsv");
 	}
 	return 0;
 }
