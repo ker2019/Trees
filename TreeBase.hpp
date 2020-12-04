@@ -7,6 +7,7 @@ public:
 	virtual void insert(const Key_t &key) = 0;
 	virtual bool contains(const Key_t &key) const = 0;
 	virtual void erase(const Key_t &key) = 0;
+	virtual int size() const = 0;
 	virtual void print() const = 0;
 };
 

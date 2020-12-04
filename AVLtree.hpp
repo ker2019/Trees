@@ -14,6 +14,7 @@ class AVLtree : public TreeBase<Key_t, Compare_t> {
 private:
 	Node<Key_t> *root;
 	Compare_t comp;
+	int elems_num = 0;
 
 	Node<Key_t> *find(const Key_t &key) const {
 		if (root == nullptr)
@@ -87,6 +88,7 @@ public:
 	void insert(const Key_t &key) {
 		if (root == nullptr) {
 			Node<Key_t>::createRoot(key, &root);
+			elems_num++;
 			return;
 		}
 		Node<Key_t> *node = root;
@@ -94,6 +96,7 @@ public:
 			if (comp(key, node->data)) {
 				if (node->getLeft() == nullptr) {
 					node->createLeft(key);
+					elems_num++;
 					fix(node);
 					return;
 				}
@@ -102,6 +105,7 @@ public:
 			else if (comp(node->data, key)) {
 				if (node->getRight() == nullptr) {
 					node->createRight(key);
+					elems_num++;
 					fix(node);
 					return;
 				}
@@ -142,8 +146,13 @@ public:
 		}
 		Node<Key_t> *p = n->getParent();
 		n->remove();
+		elems_num--;
 		if (p != nullptr)
 			fix(p);
+	}
+
+	int size() const {
+		return elems_num;
 	}
 
 	void print() const {

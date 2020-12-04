@@ -17,6 +17,7 @@ private:
 	enum color_t {red, black};
 	Node<pair<Key_t, color_t>> *root = nullptr;
 	Compare_t comp;
+	int elems_num = 0;
 
 	Node<pair<Key_t, color_t>> *find(const Key_t &key) const {
 		if (root == nullptr)
@@ -230,6 +231,7 @@ public:
 	void insert(const Key_t &key) {
 		if (root == nullptr) {
 			Node<pair<Key_t, color_t>>::createRoot({key, black}, &root);
+			elems_num++;
 			return;
 		}
 		Node<pair<Key_t, color_t>> *node = root;
@@ -237,6 +239,7 @@ public:
 			if (comp(key, node->data.first)) {
 				if (node->getLeft() == nullptr) {
 					node->createLeft({key, red});
+					elems_num++;
 					fixInsertion(node->getLeft());
 					return;
 				}
@@ -245,6 +248,7 @@ public:
 			else if (comp(node->data.first, key)) {
 				if (node->getRight() == nullptr) {
 					node->createRight({key, red});
+					elems_num++;
 					fixInsertion(node->getRight());
 					return;
 				}
@@ -314,6 +318,11 @@ public:
 			else
 				node->remove();
 		}
+		elems_num--;
+	}
+
+	int size() const {
+		return elems_num;
 	}
 
 	void print() const {
