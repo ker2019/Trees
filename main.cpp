@@ -1,6 +1,8 @@
 #include <iostream>
 #include <getopt.h>
 #include <filesystem>
+#include <string>
+#include <random>
 
 #include "TreeBase.hpp"
 #include "AVLtree.hpp"
@@ -12,6 +14,8 @@ using std::cout;
 using std::cerr;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
+using std::string;
+using std::random_device;
 
 void game(TreeBase<int> &K) {
 	while (1) {
@@ -39,6 +43,18 @@ void game(TreeBase<int> &K) {
 	}
 }
 
+struct getRandomString {
+	string operator()() {
+		random_device rnd;
+		int len = rnd() % 10;
+		char str[11];
+		for (int i = 0; i < len; i++)
+			str[i] = (char)rnd();
+		str[len] = 0;
+		return str;
+	}
+};
+
 int main(int argc, char *argv[]) {
 	int opt_index = 0;
 	struct option options[] = {{"avl", no_argument, 0, 0}, {"rb", no_argument, 0, 0}};
@@ -61,10 +77,10 @@ int main(int argc, char *argv[]) {
 				cerr << "Cannot make directory: out; Aborting\n";
 				return 2;
 			}
-		Profiler<AVLtree<int>> ap;
+		Profiler<AVLtree<string>, getRandomString> ap;
 		ap.measure(1000000);
 		ap.saveStats("out/avl.tsv");
-		Profiler<RBtree<int>> rp;
+		Profiler<RBtree<string>, getRandomString> rp;
 		rp.measure(1000000);
 		rp.saveStats("out/rb.tsv");
 	}

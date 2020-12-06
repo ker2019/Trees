@@ -269,7 +269,7 @@ public:
 			return;
 
 		elems_num--;
-		Node<pair<key_t, color_t>> *n = node;
+		Node<pair<Key_t, color_t>> *n = node;
 		if (n->getLeft() != nullptr && n->getRight() != nullptr) {
 			n = n->getRight();
 			while (n->getLeft() != nullptr)

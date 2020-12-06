@@ -1,10 +1,10 @@
 #ifndef PROFILER_HPP
 #define PROFILER_HPP
 
-#include <iostream>
 #include <vector>
 #include <utility>
 #include <random>
+#include <algorithm>
 #include <string>
 #include <fstream>
 
@@ -13,28 +13,30 @@
 
 using std::vector;
 using std::pair;
-using std::random_device;
+using std::random_shuffle;
 using std::string;
 using std::fstream;
 
-template< class Tree >
+template< class Tree, class Generator = std::random_device >
 class Profiler {
 private:
 	vector<pair<int, double>> insertionStats;
 	vector<pair<int, double>> accessStats;
 	vector<pair<int, double>> deletionStats;
-	random_device rnd;
-
+	Generator rnd;
 public:
+	Profiler() : rnd() {}
+	Profiler(const Generator &g) : rnd(g) {}
+
 	void measure(int max_size, int cicles = 10000) {
 		Tree tree;
 		// Fill a buffer by random numbers in advance
-		int *random_elems = new int[2*max_size + cicles];
-		for (int i = 0; i < 2*max_size + cicles; i++)
+		typename Tree::key_type *random_elems = new typename Tree::key_type[max_size + cicles];
+		for (int i = 0; i < max_size + cicles; i++)
 			random_elems[i] = rnd();
 
 		int n = 0;
-		while (tree.size() < max_size && n < 2*max_size) {
+		while (tree.size() < max_size && n < max_size) {
 			int start_size = tree.size();
 			double start, stop;
 			start = getCPUTime();
@@ -49,8 +51,10 @@ public:
 			insertionStats.push_back(pair{(end_size + start_size)/2, (stop - start)/cicles});
 		}
 
+		random_shuffle(random_elems, random_elems + max_size + cicles);
+
 		n = 0;
-		while (tree.size() > 0 && n < 2*max_size) {
+		while (tree.size() > 0 && n < max_size) {
 			int start_size = tree.size();
 			double start, stop;
 
@@ -92,11 +96,12 @@ public:
 		while (!stop)  {
 			stop = true;
 			if (i != insertionStats.cend())
-				f << i->first << '\t' << i->second << '\t', stop = false, i++;
+				f << i->first << '\t' << i->second, stop = false, i++;
 			if (j != accessStats.cend())
-				f << j->first << '\t' << j->second << '\t', stop = false, j++;
+				f << '\t' << j->first << '\t' << j->second, stop = false, j++;
 			if (k != deletionStats.cend())
-				f << k->first << '\t' << k->second << '\n', stop = false, k++;
+				f << '\t' << k->first << '\t' << k->second, stop = false, k++;
+			f << '\n';
 		}
 		f.close();
 	}

@@ -9,7 +9,8 @@ public:
 	virtual void erase(const Key_t &key) = 0;
 	virtual int size() const = 0;
 	virtual void print() const = 0;
+	typedef Key_t key_type;
+	typedef Compare_t key_compare;
 };
 
 #endif /* TREEBASE_HPP */
-
