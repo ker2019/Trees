@@ -17,24 +17,25 @@ using std::filesystem::exists;
 using std::string;
 using std::random_device;
 
-void game(TreeBase<int> &K) {
+template< typename T >
+void game(TreeBase<T> &K) {
 	while (1) {
 		char ch;
-		int n;
+		T k;
 		cin >> ch;
 		switch (ch) {
 		case 'a':
-			cin >> n;
-			K.insert(n);
+			cin >> k;
+			K.insert(k);
 			K.print();
 			break;
 		case 'e':
-			cin >> n;
-			cout << (K.contains(n) ? "YES\n" : "NO\n");
+			cin >> k;
+			cout << (K.contains(k) ? "YES\n" : "NO\n");
 			break;
 		case 'd':
-			cin >> n;
-			K.erase(n);
+			cin >> k;
+			K.erase(k);
 			K.print();
 			break;
 		case 'q':
@@ -60,11 +61,11 @@ int main(int argc, char *argv[]) {
 	struct option options[] = {{"avl", no_argument, 0, 0}, {"rb", no_argument, 0, 0}};
 	if (getopt_long_only(argc, argv, "", options, &opt_index) == 0) {
 		if (opt_index == 0) {
-			AVLtree<int> K;
+			AVLtree<string> K;
 			game(K);
 		}
 		else if (opt_index == 1) {
-			RBtree<int> K;
+			RBtree<string> K;
 			K.size();
 			game(K);
 		}
