@@ -1,6 +1,7 @@
 #ifndef PROFILER_HPP
 #define PROFILER_HPP
 
+#include <iostream>
 #include <vector>
 #include <utility>
 #include <random>
@@ -20,75 +21,83 @@ template< class Tree >
 class Profiler {
 private:
 	vector<pair<int, double>> insertionStats;
-	vector<pair<int, double>> deletionStats;
 	vector<pair<int, double>> accessStats;
+	vector<pair<int, double>> deletionStats;
 	random_device rnd;
 
-	void measureTime(vector<Tree> &trees, int size, int min, int max, int *buffer) {
-		// Fill the buffer by random numbers in advance
-		for (int i = 0; i < trees.size(); i++)
-			buffer[i] = min + rnd() % (max - min);
-
-		double start, stop;
-		start = getCPUTime();
-		int i = 0;
-		for (auto it = trees.begin(); it != trees.end(); it++, i++)
-			it->insert(buffer[i]);
-		stop = getCPUTime();
-		if (start < 0 || stop < 0)
-			throw 1;
-		insertionStats.push_back({size, (stop - start)/trees.size()});
-
-		start = getCPUTime();
-		for (auto it = trees.begin(); it != trees.end(); it++)
-			it->contains(buffer[i]);
-		stop = getCPUTime();
-		if (start < 0 || stop < 0)
-			throw 1;
-		accessStats.push_back({size, (stop - start)/trees.size()});
-
-		start = getCPUTime();
-		for (auto it = trees.begin(); it != trees.end(); it++)
-			it->erase(buffer[i]);
-		stop = getCPUTime();
-		if (start < 0 || stop < 0)
-			throw 1;
-		deletionStats.push_back({size, (stop - start)/trees.size()});
-	}
-
-	void toSize(vector<Tree> &trees, int size, int min, int max) {
-		for (auto tree: trees) {
-			while (tree.size() < size)
-				tree.insert(min + rnd() % (max - min));
-			while (tree.size() > size)
-				tree.erase(min + rnd() % (max - min));
-		}
-	}
-
 public:
-	void measure(int max_size, int cicles = 1000) {
-		vector<Tree> trees(cicles);
-		int *buffer = new int[cicles];
-		int size = 1;
-		while (size < max_size) {
-			toSize(trees, size, 0, 2*size);
-			measureTime(trees, size, 0, 2*size, buffer);
-			size++;
+	void measure(int max_size, int cicles = 10000) {
+		Tree tree;
+		// Fill a buffer by random numbers in advance
+		int *random_elems = new int[2*max_size + cicles];
+		for (int i = 0; i < 2*max_size + cicles; i++)
+			random_elems[i] = rnd();
+
+		int n = 0;
+		while (tree.size() < max_size && n < 2*max_size) {
+			int start_size = tree.size();
+			double start, stop;
+			start = getCPUTime();
+
+			for (int i = 0; i < cicles; i++)
+				tree.insert(random_elems[n++]);
+
+			stop = getCPUTime();
+			int end_size = tree.size();
+			if (start < 0 || stop < 0)
+				throw 1;
+			insertionStats.push_back(pair{(end_size + start_size)/2, (stop - start)/cicles});
 		}
-		delete[] buffer;
+
+		n = 0;
+		while (tree.size() > 0 && n < 2*max_size) {
+			int start_size = tree.size();
+			double start, stop;
+
+			start = getCPUTime();
+
+			for (int i = 0; i < cicles; i++)
+				tree.contains(random_elems[n++]);
+
+			stop = getCPUTime();
+			int end_size = tree.size();
+			if (start < 0 || stop < 0)
+				throw 1;
+			accessStats.push_back(pair{start_size, (stop - start)/cicles});
+
+			n -= cicles;
+
+			start = getCPUTime();
+
+			for (int i = 0; i < cicles; i++)
+				tree.erase(random_elems[n++]);
+
+			stop = getCPUTime();
+			end_size = tree.size();
+			if (start < 0 || stop < 0)
+				throw 1;
+			deletionStats.push_back(pair{(end_size + start_size)/2, (stop - start)/cicles});
+		}
+
+		delete[] random_elems;
 	}
 
 	void saveStats(const string &filename) const {
 		fstream f(filename, f.out);
-		f << "n\tinsertion\taccess\tdeletion\n";
+		f << "size_ins\tinsertion\tsize_acc\taccess\tsize_del\tdeletion\n";
 		if (!f.is_open())
 			throw 1;
-		for (auto it: insertionStats)
-			f << it.first << '\t' << it.second << '\n';
-		for (auto it: accessStats)
-			f << it.first << '\t' << '\t' << it.second << '\n';
-		for (auto it: deletionStats)
-			f << it.first << '\t' << '\t' << '\t' << it.second << '\n';
+		auto i = insertionStats.cbegin(), j = accessStats.cbegin(), k = deletionStats.cbegin();
+		bool stop = false;
+		while (!stop)  {
+			stop = true;
+			if (i != insertionStats.cend())
+				f << i->first << '\t' << i->second << '\t', stop = false, i++;
+			if (j != accessStats.cend())
+				f << j->first << '\t' << j->second << '\t', stop = false, j++;
+			if (k != deletionStats.cend())
+				f << k->first << '\t' << k->second << '\n', stop = false, k++;
+		}
 		f.close();
 	}
 };

@@ -268,6 +268,7 @@ public:
 		if (node == nullptr)
 			return;
 
+		elems_num--;
 		Node<pair<key_t, color_t>> *n = node;
 		if (n->getLeft() != nullptr && n->getRight() != nullptr) {
 			n = n->getRight();
@@ -318,7 +319,6 @@ public:
 			else
 				node->remove();
 		}
-		elems_num--;
 	}
 
 	int size() const {

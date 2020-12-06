@@ -22,6 +22,7 @@ void game(TreeBase<int> &K) {
 		case 'a':
 			cin >> n;
 			K.insert(n);
+			K.print();
 			break;
 		case 'e':
 			cin >> n;
@@ -30,6 +31,7 @@ void game(TreeBase<int> &K) {
 		case 'd':
 			cin >> n;
 			K.erase(n);
+			K.print();
 			break;
 		case 'q':
 			return;
@@ -60,10 +62,10 @@ int main(int argc, char *argv[]) {
 				return 2;
 			}
 		Profiler<AVLtree<int>> ap;
-		ap.measure(1000);
+		ap.measure(1000000);
 		ap.saveStats("out/avl.tsv");
 		Profiler<RBtree<int>> rp;
-		rp.measure(1000);
+		rp.measure(1000000);
 		rp.saveStats("out/rb.tsv");
 	}
 	return 0;
