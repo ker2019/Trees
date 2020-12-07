@@ -1,6 +1,6 @@
 # Trees
 
-This is project only for educational purposes in the Moscow Institute of Physics and Technology.
+This is a project only for educational purposes in the Moscow Institute of Physics and Technology.
 
 #### Description
 
@@ -15,3 +15,12 @@ $ cmake .
 $ make
 
 Then you will have a binary file "tree" you can execute.
+
+#### Usage
+
+Execute the binary "tree". Than you will have the timing statistics in the files "out/avl.tsv", "/out/rb.tsv".
+To show it in graphs use the python script "graph.py". It will save the graphs in the PNG format in the
+directory "out/".
+Also you can interactively play with the trees via:
+
+$ ./tree --game avl|rb
